@@ -1003,7 +1003,6 @@ class ProductController extends Controller
         //combinations end
         $productArray += [
             'variation' => $request['product_type'] == 'physical' ? json_encode($variations) : json_encode([]),
-            'wholesale_tiers' => normalizeWholesaleTiers($request->input('wholesale_tiers', [])),
             'unit_price' => Convert::usd($request['unit_price']),
             'purchase_price' => 0,
             'discount' => $request['discount_type'] == 'flat' ? Convert::usd($request['discount']) : $request['discount'],
@@ -1494,7 +1493,6 @@ class ProductController extends Controller
 
         $productArray += [
             'variation' => $request->product_type == 'physical' ? json_encode($variations) : json_encode([]),
-            'wholesale_tiers' => normalizeWholesaleTiers($request->input('wholesale_tiers', [])),
             'unit_price' => Convert::usd($request->unit_price),
             'purchase_price' => 0,
             'discount' => $request->discount_type == 'flat' ? Convert::usd($request->discount) : $request->discount,

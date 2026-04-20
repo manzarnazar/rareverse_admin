@@ -53,16 +53,6 @@ trait VendorPOSManagement
             }
         }
 
-        $price = resolveWholesaleTierPrice(
-            product: $product,
-            basePrice: $price,
-            quantity: (int)$cartItem['quantity'],
-            variant: $variant ?: null
-        );
-        $unitPrice = $price;
-        $productDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price, from: 'panel');
-        $productSubtotal = $price * $cartItem['quantity'];
-
         $product['unit_price_amount'] = $unitPrice;
         unset($product['order_details']);
         unset($product['order_delivered']);
