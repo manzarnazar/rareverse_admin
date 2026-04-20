@@ -1943,6 +1943,9 @@ function getVariantPrice(formSelector = ".add-to-cart-details-form") {
                 }
                 updateProductDetailsTopSection(".add-to-cart-details-form", response);
                 updateProductDetailsBottomSection(".add-to-cart-sticky-form", response);
+                if (typeof window.highlightWholesalePricingRows === "function") {
+                    window.highlightWholesalePricingRows();
+                }
                 if (response?.discount_amount > 0) {
                     if (response?.discount_type === "flat") {
                         $(formSelector).find(".discounted_badge").html(`${response?.discount}`);

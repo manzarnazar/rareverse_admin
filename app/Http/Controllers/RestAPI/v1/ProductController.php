@@ -338,6 +338,10 @@ class ProductController extends Controller
         if (isset($product)) {
             $restockRequestedIds = $this->restockProductRepo->getListWhere(filters: ['product_id' => $product['id']], dataLimit: 'all')?->pluck('id')->toArray() ?? [];
 
+            $wholesaleTiers = $product->relationLoaded('wholesalePricing')
+                ? $product->wholesalePricing
+                : $product->wholesalePricing()->get();
+
             $product = Helpers::product_data_formatting($product, false);
             if (isset($product->reviews) && !empty($product->reviews)) {
                 $overallRating = getOverallRating($product?->reviews);
@@ -364,7 +368,7 @@ class ProductController extends Controller
             }
 
             $unitRef = (float) ($product['unit_price'] ?? 0);
-            $product['wholesale_pricing'] = $product->wholesalePricing->map(function ($t) use ($unitRef) {
+            $product['wholesale_pricing'] = $wholesaleTiers->map(function ($t) use ($unitRef) {
                 $row = [
                     'min_qty' => (int) $t->min_qty,
                     'max_qty' => $t->max_qty,
@@ -376,7 +380,9 @@ class ProductController extends Controller
 
                 return $row;
             })->values()->all();
-            unset($product['wholesalePricing']);
+            if (isset($product['wholesalePricing'])) {
+                unset($product['wholesalePricing']);
+            }
         }
         return response()->json($product, 200);
     }

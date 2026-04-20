@@ -977,6 +977,9 @@ function getVariantPrice(formSelector = ".add-to-cart-details-form") {
             success: function (response) {
                 updateProductDetailsTopSection(".add-to-cart-details-form",response);
                 updateProductDetailsBottomSection('.add-to-cart-sticky-form', response);
+                if (typeof window.highlightWholesalePricingRows === "function") {
+                    window.highlightWholesalePricingRows();
+                }
                 if (formSelector === '.add-to-cart-sticky-form' || checkFirstTimeVariant) {
                     checkFirstTimeVariant = false;
                 }
