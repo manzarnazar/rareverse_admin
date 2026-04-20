@@ -120,6 +120,7 @@ class Product extends Model
         'digital_file_ready_storage_type',
         'is_shipping_cost_updated',
         'temp_shipping_cost',
+        'wholesale_tiers',
     ];
 
     /**
@@ -173,6 +174,7 @@ class Product extends Model
         'is_shipping_cost_updated' => 'integer',
         'digital_product_file_types' => 'array',
         'digital_product_extensions' => 'array',
+        'wholesale_tiers' => 'array',
         'thumbnail_storage_type' => 'string',
         'digital_file_ready_storage_type' => 'string',
     ];

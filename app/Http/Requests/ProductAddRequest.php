@@ -328,8 +328,59 @@ class ProductAddRequest extends Request
                         );
                     }
                 }
+
+                $this->validateWholesaleTiers($validator);
             }
         ];
+    }
+
+    private function validateWholesaleTiers(Validator $validator): void
+    {
+        if (!$this->has('wholesale_tiers') || empty($this->input('wholesale_tiers'))) {
+            return;
+        }
+
+        $tiers = normalizeWholesaleTiers($this->input('wholesale_tiers'));
+        if (empty($tiers)) {
+            $validator->errors()->add('wholesale_tiers', translate('Please_provide_valid_wholesale_tiers') . '!');
+            return;
+        }
+
+        $grouped = [];
+        foreach ($tiers as $tier) {
+            $groupKey = $tier['variant'] ?? '__base__';
+            $grouped[$groupKey][] = $tier;
+        }
+
+        foreach ($grouped as $groupKey => $variantTiers) {
+            usort($variantTiers, fn($a, $b) => $a['min_qty'] <=> $b['min_qty']);
+            $previous = null;
+
+            foreach ($variantTiers as $index => $tier) {
+                if ($previous) {
+                    if (!is_null($previous['max_qty'])) {
+                        if ($tier['min_qty'] <= $previous['max_qty']) {
+                            $validator->errors()->add('wholesale_tiers', translate('Wholesale_tier_ranges_can_not_overlap') . '!');
+                            return;
+                        }
+                        if (($previous['max_qty'] + 1) !== $tier['min_qty']) {
+                            $validator->errors()->add('wholesale_tiers', translate('Wholesale_tier_ranges_must_be_continuous') . '!');
+                            return;
+                        }
+                    } else {
+                        $validator->errors()->add('wholesale_tiers', translate('Open_ended_tier_must_be_the_last_tier') . '!');
+                        return;
+                    }
+                }
+
+                if (is_null($tier['max_qty']) && $index !== count($variantTiers) - 1) {
+                    $validator->errors()->add('wholesale_tiers', translate('Open_ended_tier_must_be_the_last_tier') . '!');
+                    return;
+                }
+
+                $previous = $tier;
+            }
+        }
     }
 
     /**

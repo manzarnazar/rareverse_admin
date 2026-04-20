@@ -158,6 +158,9 @@ class Helpers
             ];
         }
         $data['variation'] = $variation;
+        $data['wholesale_tiers'] = isset($data['wholesale_tiers'])
+            ? (is_array($data['wholesale_tiers']) ? $data['wholesale_tiers'] : (json_decode($data['wholesale_tiers'], true) ?? []))
+            : [];
 
         return $data;
     }
@@ -222,6 +225,9 @@ class Helpers
             ];
         }
         $data['variation'] = $variation;
+        $data['wholesale_tiers'] = isset($data['wholesale_tiers'])
+            ? (is_array($data['wholesale_tiers']) ? $data['wholesale_tiers'] : (json_decode($data['wholesale_tiers'], true) ?? []))
+            : [];
         return $data;
     }
 

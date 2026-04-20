@@ -448,6 +448,13 @@ class CartManager
             $price = $product->unit_price;
         }
 
+        $price = resolveWholesaleTierPrice(
+            product: $product,
+            basePrice: $price,
+            quantity: (int)$request['quantity'],
+            variant: $string ?: null
+        );
+
         $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
 
         $cartArray += [
@@ -588,6 +595,12 @@ class CartManager
         if ($request['variant_key'] && $digitalVariation) {
             $price = $digitalVariation['price'];
         }
+        $price = resolveWholesaleTierPrice(
+            product: $product,
+            basePrice: $price,
+            quantity: (int)$request['quantity'],
+            variant: $request['variant_key'] ?: null
+        );
         $user = Helpers::getCustomerInformation($request);
         $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
 
@@ -753,8 +766,42 @@ class CartManager
         }
 
         if ($status) {
+            $updatedPrice = (float)$product->unit_price;
+            if ($product['product_type'] === 'physical' && !empty($cart['variant'])) {
+                foreach (json_decode($product->variation) ?? [] as $variation) {
+                    if (($variation->type ?? null) == $cart['variant']) {
+                        $updatedPrice = (float)($variation->price ?? $updatedPrice);
+                        break;
+                    }
+                }
+            }
+
+            if ($product['product_type'] === 'digital' && !empty($cart['variant'])) {
+                $digitalVariation = DigitalProductVariation::where([
+                    'product_id' => $product['id'],
+                    'variant_key' => $cart['variant'],
+                ])->first();
+                if ($digitalVariation) {
+                    $updatedPrice = (float)$digitalVariation['price'];
+                }
+            }
+
+            $updatedPrice = resolveWholesaleTierPrice(
+                product: $product,
+                basePrice: $updatedPrice,
+                quantity: (int)$request->quantity,
+                variant: $cart['variant'] ?: null
+            );
+
             $qty = $request->quantity;
             $cart['quantity'] = $request->quantity;
+            $cart['price'] = $updatedPrice;
+            $cart['discount'] = getProductPriceByType(
+                product: $product,
+                type: 'discounted_amount',
+                result: 'value',
+                price: $updatedPrice
+            );
             $cart['shipping_cost'] = $product->product_type == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($product, $request->quantity) : 0;
         }
 

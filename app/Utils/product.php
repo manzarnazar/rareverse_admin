@@ -78,6 +78,97 @@ if (!function_exists('getProductDiscount')) {
     }
 }
 
+if (!function_exists('normalizeWholesaleTiers')) {
+    function normalizeWholesaleTiers(array|object|string|null $tiers): array
+    {
+        if (is_string($tiers)) {
+            $tiers = json_decode($tiers, true);
+        } elseif (is_object($tiers)) {
+            $tiers = (array)$tiers;
+        }
+
+        if (!is_array($tiers)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($tiers as $tier) {
+            if (is_object($tier)) {
+                $tier = (array)$tier;
+            }
+            if (!is_array($tier)) {
+                continue;
+            }
+
+            $minQty = isset($tier['min_qty']) ? (int)$tier['min_qty'] : 0;
+            $maxQty = array_key_exists('max_qty', $tier) && $tier['max_qty'] !== null && $tier['max_qty'] !== '' ? (int)$tier['max_qty'] : null;
+            $unitPrice = isset($tier['unit_price']) ? (float)$tier['unit_price'] : 0;
+            $variant = isset($tier['variant']) && $tier['variant'] !== '' ? (string)$tier['variant'] : null;
+
+            if ($minQty < 1 || $unitPrice <= 0) {
+                continue;
+            }
+            if (!is_null($maxQty) && $maxQty < $minQty) {
+                continue;
+            }
+
+            $normalized[] = [
+                'min_qty' => $minQty,
+                'max_qty' => $maxQty,
+                'unit_price' => $unitPrice,
+                'variant' => $variant,
+            ];
+        }
+
+        usort($normalized, function ($a, $b) {
+            return $a['min_qty'] <=> $b['min_qty'];
+        });
+
+        return $normalized;
+    }
+}
+
+if (!function_exists('resolveWholesaleTierPrice')) {
+    function resolveWholesaleTierPrice(array|object $product, float|int $basePrice, int $quantity, ?string $variant = null): float
+    {
+        $tiers = normalizeWholesaleTiers(
+            tiers: is_array($product) ? ($product['wholesale_tiers'] ?? []) : ($product->wholesale_tiers ?? [])
+        );
+
+        if (empty($tiers) || $quantity < 1) {
+            return (float)$basePrice;
+        }
+
+        $matchedWithVariant = [];
+        $matchedGeneric = [];
+
+        foreach ($tiers as $tier) {
+            $withinMin = $quantity >= $tier['min_qty'];
+            $withinMax = is_null($tier['max_qty']) || $quantity <= $tier['max_qty'];
+            if (!$withinMin || !$withinMax) {
+                continue;
+            }
+
+            if (!empty($tier['variant']) && !empty($variant) && $tier['variant'] === $variant) {
+                $matchedWithVariant[] = $tier;
+            } elseif (empty($tier['variant'])) {
+                $matchedGeneric[] = $tier;
+            }
+        }
+
+        $matchedTiers = !empty($matchedWithVariant) ? $matchedWithVariant : $matchedGeneric;
+        if (empty($matchedTiers)) {
+            return (float)$basePrice;
+        }
+
+        usort($matchedTiers, function ($a, $b) {
+            return $b['min_qty'] <=> $a['min_qty'];
+        });
+
+        return (float)($matchedTiers[0]['unit_price'] ?? $basePrice);
+    }
+}
+
 if (!function_exists('getPriceRangeWithDiscount')) {
     function getPriceRangeWithDiscount(array|object $product, string|null $type = 'web'): float|string
     {
