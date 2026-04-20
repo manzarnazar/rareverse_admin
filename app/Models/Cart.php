@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property float $tax
  * @property integer $is_checked
  * @property float $discount
+ * @property bool $wholesale_applied
  * @property string $tax_model
  * @property string $slug
  * @property string $name
@@ -55,6 +56,7 @@ class Cart extends Model
         'tax' => 'float',
         'is_checked' => 'integer',
         'discount' => 'float',
+        'wholesale_applied' => 'boolean',
         'seller_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -76,6 +78,7 @@ class Cart extends Model
         'price',
         'tax',
         'discount',
+        'wholesale_applied',
         'tax_model',
         'is_checked',
         'slug',

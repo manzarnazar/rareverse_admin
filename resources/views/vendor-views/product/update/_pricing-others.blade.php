@@ -158,6 +158,7 @@
                                         name="shipping_cost" class="form-control" required>
                             </div>
                         </div>
+                        @include('admin-views.product.partials._wholesale-pricing-section', ['tiers' => $product->wholesalePricing ?? collect()])
                         <div class="col-md-6 col-lg-4 physical_product_show" id="shipping_cost_multi">
                             <div class="form-group mb-0">
                                 <div class="d-flex gap-2">

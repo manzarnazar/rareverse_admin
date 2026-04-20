@@ -1625,7 +1625,7 @@ class OrderManager
 
         foreach ($orderProducts as $key => $orderProduct) {
             $productDetails = json_decode($orderProduct->product_details, true);
-            $product = Product::active()->where(['id' => $orderProduct->product_id])->with(['digitalVariation'])->first();
+            $product = Product::active()->where(['id' => $orderProduct->product_id])->with(['digitalVariation', 'wholesalePricing'])->first();
             if (!$product) {
                 $errorMessages[] = ($productDetails['name'] ?? '') . translate(' currently_not_available');
             }
@@ -1711,10 +1711,14 @@ class OrderManager
                         }
                     }
 
-                    $tax = Helpers::tax_calculation(product: $product, price: $price, tax: $product['tax'], tax_type: 'percent');
                     if ($productValid && $price != 0) {
                         $cartExist = Cart::where(['customer_id' => $user['id'], 'variations' => $orderProduct->variation, 'product_id' => $orderProduct->product_id])->first();
                         $orderProductQuantity = $orderProduct->qty < $product['minimum_order_qty'] ? $product['minimum_order_qty'] : $orderProduct->qty;
+
+                        $variantKeyForQuote = $orderProduct->variant !== null && $orderProduct->variant !== '' ? (string) $orderProduct->variant : null;
+                        $quote = CartLinePriceQuoter::quote($product, $variantKeyForQuote, (int) $orderProductQuantity);
+                        $price = $quote['unit'];
+                        $tax = Helpers::tax_calculation(product: $product, price: $price, tax: $product['tax'], tax_type: 'percent');
 
                         if (!$cartExist) {
                             $cart = new Cart();
@@ -1733,7 +1737,8 @@ class OrderManager
                             $cart['slug'] = $product->slug;
                             $cart['name'] = $product->name;
                             $cart['is_checked'] = 1;
-                            $cart['discount'] = Helpers::getProductDiscount($product, $price);
+                            $cart['discount'] = $quote['discount'];
+                            $cart['wholesale_applied'] = $quote['wholesale_applied'] ? 1 : 0;
                             $cart['thumbnail'] = $product->thumbnail;
                             $cart['seller_id'] = ($product->added_by == 'admin') ? 1 : $product->user_id;
                             $cart['seller_is'] = $product->added_by;
@@ -1762,9 +1767,10 @@ class OrderManager
                             $cart['shipping_type'] = $shippingType;
                             $cart->save();
                         } else {
-                            $cart['is_checked'] = 1;
+                            $cartExist->is_checked = 1;
                             $cartExist->quantity = $orderProductQuantity;
                             $cartExist->save();
+                            CartLinePriceQuoter::syncCartRow($cartExist);
                         }
                         $addToCartCount++;
                     } else {

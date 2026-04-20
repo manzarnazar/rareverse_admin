@@ -2003,7 +2003,8 @@ function updateProductDetailsBottomSection(formSelector, response) {
     $(formSelector).find(".product-details-cart-qty").val(response?.in_cart_quantity).attr("max", response?.quantity);
 
     productDetailsStickySection.find(".discounted-unit-price").html(response?.discounted_unit_price);
-    productDetailsStickySection.find(".product-total-unit-price").html(response?.discount_amount > 0 ? response?.total_unit_price : "");
+    const showStrikeBottom = response?.show_reference_price_strike || response?.discount_amount > 0;
+    productDetailsStickySection.find(".product-total-unit-price").html(showStrikeBottom ? response?.total_unit_price : "");
     productDetailsStickySection.find(".product-details-sticky-color-name").html(response?.color_name ? `(${response?.color_name})` : "");
 
     productDetailsStickySection.find(".product-generated-variation-code").val(response?.variation_code);
@@ -2080,7 +2081,8 @@ function updateProductDetailsTopSection(formSelector, response) {
     $(formSelector).find(".product-generated-variation-text").text(response?.variation_code);
 
     $(formSelector).find(".discounted-unit-price").html(response?.discounted_unit_price);
-    $(formSelector).find(".product-total-unit-price").html(response?.discount_amount > 0 ? response?.total_unit_price : "");
+    const showStrikeTop = response?.show_reference_price_strike || response?.discount_amount > 0;
+    $(formSelector).find(".product-total-unit-price").html(showStrikeTop ? response?.total_unit_price : "");
 
     let actionAddToCartBtn = $(formSelector).find(".product-add-to-cart-button");
     if (response?.in_cart_status === 1) {

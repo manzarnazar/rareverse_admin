@@ -438,17 +438,17 @@ class CartManager
             $count = count(json_decode($product->variation));
             for ($i = 0; $i < $count; $i++) {
                 if (json_decode($product->variation)[$i]->type == $string) {
-                    $price = json_decode($product->variation)[$i]->price;
                     if (json_decode($product->variation)[$i]->qty < $request['quantity']) {
                         return ['status' => 0, 'message' => translate('out_of_stock!')];
                     }
                 }
             }
-        } else {
-            $price = $product->unit_price;
         }
 
-        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
+        $variantKey = ($string !== null && $string !== '') ? $string : null;
+        $quote = CartLinePriceQuoter::quote($product, $variantKey, (int) $request['quantity']);
+        $price = $quote['unit'];
+        $getProductDiscount = $quote['discount'];
 
         $cartArray += [
             'customer_id' => ($user == 'offline' ? $guestId : $user['id']),
@@ -457,6 +457,7 @@ class CartManager
             'quantity' => $request['quantity'],
             'price' => $price,
             'discount' => $getProductDiscount,
+            'wholesale_applied' => $quote['wholesale_applied'] ? 1 : 0,
             'is_checked' => 1,
             'slug' => $product['slug'],
             'name' => $product['name'],
@@ -583,11 +584,6 @@ class CartManager
             return ['status' => 0, 'message' => translate('Minimum_order_quantity').' '. $product['minimum_order_qty']];
         }
 
-        $price = $product->unit_price;
-        $digitalVariation = DigitalProductVariation::where(['product_id' => $product['id'], 'variant_key' => $request['variant_key']])->first();
-        if ($request['variant_key'] && $digitalVariation) {
-            $price = $digitalVariation['price'];
-        }
         $user = Helpers::getCustomerInformation($request);
         $guestId = session('guest_id') ?? ($request->guest_id ?? 0);
 
@@ -599,7 +595,12 @@ class CartManager
             $isGuest = 0;
         }
 
-        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
+        $product->loadMissing('digitalVariation');
+        $variantKey = $request['variant_key'] ? (string) $request['variant_key'] : null;
+        $quote = CartLinePriceQuoter::quote($product, $variantKey, (int) $request['quantity']);
+        $price = $quote['unit'];
+        $getProductDiscount = $quote['discount'];
+
         $cartArray = [
             'customer_id' => $customerId,
             'product_id' => $request['id'],
@@ -611,6 +612,7 @@ class CartManager
             'quantity' => $request['quantity'],
             'price' => $price,
             'discount' => $getProductDiscount,
+            'wholesale_applied' => $quote['wholesale_applied'] ? 1 : 0,
             'is_checked' => 1,
             'slug' => $product['slug'],
             'name' => $product['name'],
@@ -675,7 +677,7 @@ class CartManager
     {
         cacheRemoveByType(type: 'carts');
 
-        $product = Product::with(['digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::with(['digitalVariation', 'wholesalePricing', 'clearanceSale' => function ($query) {
             return $query->active();
         }])->where(['id' => $request['id']])->first();
 
@@ -759,6 +761,11 @@ class CartManager
         }
 
         $cart->save();
+
+        if ($status) {
+            $cart->refresh();
+            CartLinePriceQuoter::syncCartRow($cart);
+        }
 
         if ($request['buy_now'] == 1) {
             Cart::where(['customer_id' => ($user == 'offline' ? $guest_id : $user['id']), 'is_guest' => ($user == 'offline' ? 1 : 0)])
