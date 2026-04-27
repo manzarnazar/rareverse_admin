@@ -409,8 +409,7 @@
                                                         </div>
                                                     </div>
 
-                                                    @include('partials.wholesale-pricing-table', ['product' => $product])
-
+@include('partials.wholesale-pricing-table', ['product' => $product])
                                                     <div class="mx-w d-flex flex-wrap gap-3 width--24rem product-add-and-buy-section-parent">
                                                         <div class="product-add-and-buy-section d--flex flex-wrap gap-3" {!! $firstVariationQuantity <= 0 ? 'style="display: none;"' : '' !!}>
                                                                 <?php

@@ -60,8 +60,7 @@ class CartController extends Controller
                     }]);
                 }, 'clearanceSale' => function ($query) {
                     return $query->active();
-                }, 'wholesalePricing',
-                    'taxVats' => function ($query) {
+                }, 'taxVats' => function ($query) {
                     return $query->with(['tax'])->wherehas('tax', function ($query) {
                         return $query->where('is_active', 1);
                     });
@@ -132,13 +131,8 @@ class CartController extends Controller
                     }
                 }
 
-                if (!empty($data['wholesale_applied'])) {
-                    $data['discount'] = (float) $data['discount'];
-                } else {
-                    $data['discount'] = getProductPriceByType(product: $data['product'], type: 'discounted_amount', result: 'value', price: $data['price']);
-                }
+                $data['discount'] = getProductPriceByType(product: $data['product'], type: 'discounted_amount', result: 'value', price: $data['price']);
                 unset($data['product']['variation']);
-                unset($data['product']['wholesalePricing']);
                 return $data;
             });
         }

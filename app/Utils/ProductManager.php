@@ -2471,7 +2471,7 @@ class ProductManager
         self::cacheCartListAllUserKeys(cacheKey: $cacheKey);
 
         $cartItemsList = Cache::remember($cacheKey, CACHE_FOR_3_HOURS, function () use ($request, $user) {
-            return Cart::with(['product.digitalVariation', 'product.wholesalePricing'])->whereHas('product', function ($query) {
+            return Cart::with(['product.digitalVariation'])->whereHas('product', function ($query) {
                 return $query->active();
             })->when($user == 'offline', function ($query) use ($request) {
                 return $query->where(['customer_id' => session('guest_id') ?? ($request->guest_id ?? 0), 'is_guest' => 1]);
@@ -2509,12 +2509,6 @@ class ProductManager
                         }
                     }
                 }
-            }
-
-            if (CartLinePriceQuoter::productHasWholesaleTiers($cartItemProduct)) {
-                CartLinePriceQuoter::syncCartRow($cartItem);
-
-                continue;
             }
 
             if (empty($cartItem->variant) && $cartItem->price != $cartItemProduct->unit_price) {
@@ -2709,27 +2703,12 @@ class ProductManager
                     ->count() > 0);
         }
 
-        $wholesaleApplied = false;
-        $productModel = Product::with(['wholesalePricing', 'clearanceSale' => fn ($q) => $q->active(), 'digitalVariation'])->find($product['id']);
-        if ($productModel) {
-            $variantKeyForQuote = null;
-            if ($productModel->product_type === 'digital') {
-                $variantKeyForQuote = $productModel->digitalVariation->first()->variant_key ?? null;
-            } else {
-                $variantKeyForQuote = ($firstVariant !== '' && $firstVariant !== null) ? $firstVariant : null;
-            }
-            $quote = CartLinePriceQuoter::quote($productModel, $variantKeyForQuote, (int) $initialProductQuantity);
-            $price = $quote['unit'] - $quote['discount'];
-            $discount = $quote['discount'];
-            $wholesaleApplied = $quote['wholesale_applied'];
-        }
-
-        $discountType = $wholesaleApplied ? 'percent' : getProductPriceByType(product: $product, type: 'discount_type', result: 'string');
+        $discountType = getProductPriceByType(product: $product, type: 'discount_type', result: 'string');
         return [
             'first_variant_in_cart' => $firstVariantInCart,
             'quantity' => $initialProductQuantity,
             'price' => $price,
-            'discount' => $wholesaleApplied ? '0%' : ($discountType == 'flat' ? webCurrencyConverter($discount) : getProductPriceByType(product: $product, type: 'discount', result: 'value') . '%'),
+            'discount' => $discountType == 'flat' ? webCurrencyConverter($discount) : getProductPriceByType(product: $product, type: 'discount', result: 'value') . '%',
             'discount_type' => $discountType,
             'total_quantity_price' => $price * $initialProductQuantity,
             'variant' => $firstVariant,

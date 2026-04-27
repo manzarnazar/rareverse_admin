@@ -360,11 +360,6 @@ class Product extends Model
         return $this->hasMany(DigitalProductVariation::class, 'product_id');
     }
 
-    public function wholesalePricing(): HasMany
-    {
-        return $this->hasMany(WholesalePricing::class, 'product_id')->orderBy('min_qty');
-    }
-
     public function tags(): BelongsToMany
     {
         if (strpos(url()->current(), '/api')) {

@@ -155,8 +155,6 @@
                             </div>
                         </div>
 
-                        @include('admin-views.product.partials._wholesale-pricing-section', ['tiers' => collect()])
-
                         <div class="col-md-4 col-lg-4 physical_product_show" id="shipping_cost_multi">
                             <div class="form-group">
                                 <div>

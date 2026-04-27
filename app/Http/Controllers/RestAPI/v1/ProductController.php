@@ -327,7 +327,7 @@ class ProductController extends Controller
     {
         $user = Helpers::getCustomerInformation($request);
 
-        $product = Product::active()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'wholesalePricing', 'clearanceSale' => function ($query) {
+        $product = Product::active()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
             ->withCount(['wishList' => function ($query) use ($user) {
@@ -366,23 +366,7 @@ class ProductController extends Controller
                 $product['restock_requested_list'] = [];
                 $product['is_restock_requested'] = 0;
             }
-
-            $unitRef = (float) ($product['unit_price'] ?? 0);
-            $product['wholesale_pricing'] = $wholesaleTiers->map(function ($t) use ($unitRef) {
-                $row = [
-                    'min_qty' => (int) $t->min_qty,
-                    'max_qty' => $t->max_qty,
-                    'price' => (float) $t->price,
-                ];
-                if ($unitRef > 0) {
-                    $row['discount_percent'] = round(100 * ($unitRef - (float) $t->price) / $unitRef, 2);
-                }
-
-                return $row;
-            })->values()->all();
-            if (isset($product['wholesalePricing'])) {
-                unset($product['wholesalePricing']);
-            }
+// Resolved: remove conflicting wholesale pricing block as per parent of 2a88c7d (no wholesale pricing functionality here)
         }
         return response()->json($product, 200);
     }

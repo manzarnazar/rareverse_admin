@@ -37,8 +37,6 @@ use App\Traits\FileManagerTrait;
 use App\Traits\ProductTrait;
 use App\Utils\CartManager;
 use App\Utils\ProductManager;
-use App\Utils\WholesalePricingSync;
-use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Devrabiul\ToastMagic\Facades\ToastMagic;
 use Illuminate\Contracts\View\View;
@@ -234,13 +232,6 @@ class ProductController extends BaseController
             taxIds: $request['tax_ids'] ?? []
         );
 
-        try {
-            WholesalePricingSync::syncFromHttpRequest($request, (int) $savedProduct->id);
-        } catch (ValidationException $e) {
-            ToastMagic::error(collect($e->errors())->flatten()->first());
-            return redirect()->back()->withInput()->withErrors($e->errors());
-        }
-
         ToastMagic::success(translate('product_added_successfully'));
         return redirect()->route('vendor.products.list', ['type' => 'all']);
     }
@@ -251,7 +242,7 @@ class ProductController extends BaseController
         $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
         $taxVats = $taxData['taxVats'];
 
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo', 'digitalProductAuthors', 'digitalProductPublishingHouse', 'wholesalePricing']);
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo', 'digitalProductAuthors', 'digitalProductPublishingHouse']);
         if (!$product) {
             ToastMagic::error(translate('invalid_product'));
             return redirect()->route('vendor.products.list', ['type' => 'all']);
@@ -313,15 +304,6 @@ class ProductController extends BaseController
             taxIds: $request['tax_ids'] ?? [],
             oldTaxIds: $taxVatIds
         );
-
-        if ($request->filled('wholesale_pricing_json') || $request->filled('wholesale_pricing')) {
-            try {
-                WholesalePricingSync::syncFromHttpRequest($request, (int) $id);
-            } catch (ValidationException $e) {
-                ToastMagic::error(collect($e->errors())->flatten()->first());
-                return redirect()->back()->withInput()->withErrors($e->errors());
-            }
-        }
 
         ToastMagic::success(translate('product_updated_successfully'));
         return redirect()->route('vendor.products.view', ['id' => $product['id']]);

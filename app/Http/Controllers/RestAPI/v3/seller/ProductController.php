@@ -35,7 +35,6 @@ use App\Models\Shop;
 use App\Models\StockClearanceProduct;
 use App\Models\Tag;
 use App\Models\Translation;
-use App\Models\WholesalePricing;
 use App\Repositories\DigitalProductPublishingHouseRepository;
 use App\Services\ProductService;
 use App\Traits\CacheManagerTrait;
@@ -44,8 +43,6 @@ use App\Traits\ProductTrait;
 use App\Utils\Convert;
 use App\Utils\Helpers;
 use App\Utils\ProductManager;
-use App\Utils\WholesalePricingSync;
-use App\Utils\WholesalePricingValidator;
 use Barryvdh\DomPDF\PDF;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -53,7 +50,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Modules\TaxModule\app\Traits\VatTaxManagement;
 
 class ProductController extends Controller
@@ -996,20 +992,6 @@ class ProductController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $wholesaleNormalized = [];
-        try {
-            $raw = $request->input('wholesale_pricing', $request->input('wholesale_pricing_json', []));
-            if (is_string($raw)) {
-                $raw = json_decode($raw, true) ?? [];
-            }
-            if (!is_array($raw)) {
-                $raw = [];
-            }
-            $wholesaleNormalized = $raw === [] ? [] : WholesalePricingValidator::validateAndNormalize($raw);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-
         $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
         $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
 
@@ -1083,10 +1065,6 @@ class ProductController extends Controller
             }
         }
         Translation::insert($data);
-
-        if ($wholesaleNormalized !== []) {
-            WholesalePricingSync::replaceForProduct($product->id, $wholesaleNormalized);
-        }
 
         $this->getAddTaxData(
             taxableType: \App\Models\Product::class,
@@ -1195,38 +1173,10 @@ class ProductController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo', 'wholesalePricing')->withCount('reviews')->find($id);
+        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo')->withCount('reviews')->find($id);
         $product = Helpers::product_data_formatting($product);
-        $product['wholesale_pricing'] = $this->formatWholesalePricingForApiResponse($product);
 
         return response()->json($product, 200);
-    }
-
-    /**
-     * @param  \Illuminate\Database\Eloquent\Model|array  $product
-     * @return array<int, array<string, mixed>>
-     */
-    private function formatWholesalePricingForApiResponse($product): array
-    {
-        $id = is_array($product) ? ($product['id'] ?? null) : ($product->id ?? null);
-        if (!$id) {
-            return [];
-        }
-        $unitRef = (float) (is_array($product) ? ($product['unit_price'] ?? 0) : ($product->unit_price ?? 0));
-        $tiers = WholesalePricing::where('product_id', $id)->orderBy('min_qty')->get();
-
-        return $tiers->map(function (WholesalePricing $t) use ($unitRef) {
-            $row = [
-                'min_qty' => (int) $t->min_qty,
-                'max_qty' => $t->max_qty,
-                'price' => (float) $t->price,
-            ];
-            if ($unitRef > 0) {
-                $row['discount_percent'] = round(100 * ($unitRef - (float) $t->price) / $unitRef, 2);
-            }
-
-            return $row;
-        })->values()->all();
     }
 
     public function updateProduct(Request $request, $id): JsonResponse
@@ -1538,22 +1488,6 @@ class ProductController extends Controller
             return response()->json(['errors' => Helpers::validationErrorProcessor($validator)], 403);
         }
 
-        $wholesaleNormalizedUpdate = null;
-        if ($request->filled('wholesale_pricing') || $request->filled('wholesale_pricing_json')) {
-            try {
-                $raw = $request->input('wholesale_pricing', $request->input('wholesale_pricing_json', []));
-                if (is_string($raw)) {
-                    $raw = json_decode($raw, true) ?? [];
-                }
-                if (!is_array($raw)) {
-                    $raw = [];
-                }
-                $wholesaleNormalizedUpdate = $raw === [] ? [] : WholesalePricingValidator::validateAndNormalize($raw);
-            } catch (ValidationException $e) {
-                return response()->json(['errors' => $e->errors()], 422);
-            }
-        }
-
         $digitalFileOptions = self::getDigitalVariationOptions(request: $request);
         $digitalFileCombinations = self::getDigitalVariationCombinations(arrays: $digitalFileOptions);
 
@@ -1657,10 +1591,6 @@ class ProductController extends Controller
         $updatedProduct = $this->productRepo->getFirstWhere(params: ['id' => $product['id']]);
         $this->updateRestockRequestListAndNotify(product: $oldProductData, updatedProduct: $updatedProduct);
         $this->updateStockClearanceProduct(product: $updatedProduct);
-
-        if ($wholesaleNormalizedUpdate !== null) {
-            WholesalePricingSync::replaceForProduct((int) $product->id, $wholesaleNormalizedUpdate);
-        }
 
         $taxVatIds = $product?->taxVats?->pluck('tax_id')->toArray() ?? [];
         $this->getUpdateTaxData(
