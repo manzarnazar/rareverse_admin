@@ -222,39 +222,41 @@
                                                                 <th>{{ translate('PVP') }}</th>
                                                             </tr>
                                                             </thead>
-                                                            <tbody>
-                                                            @php($selectedQty = (int)($initialProductConfig['quantity'] ?? 1))
-                                                            @foreach($product->tierDiscounts as $tierDiscount)
-                                                                @php
+                                                            @php
+                                                                $selectedQty = (int)($initialProductConfig['quantity'] ?? 1);
+                                                                $tierTableRows = [];
+                                                                foreach ($product->tierDiscounts as $tierDiscount) {
                                                                     $minQty = (int)$tierDiscount->min_qty;
                                                                     $maxQty = is_null($tierDiscount->max_qty) ? null : (int)$tierDiscount->max_qty;
                                                                     $tierBasePrice = (float)$product->unit_price;
+
                                                                     if ($tierDiscount->discount_type === 'percent') {
                                                                         $tierDiscountAmount = ($tierBasePrice * $tierDiscount->discount) / 100;
                                                                         $tierDiscountPercent = (float)$tierDiscount->discount;
                                                                     } else {
                                                                         $tierDiscountAmount = $tierDiscount->discount;
-                                                                        if ($tierBasePrice > 0) {
-                                                                            $tierDiscountPercent = ($tierDiscountAmount / $tierBasePrice) * 100;
-                                                                        } else {
-                                                                            $tierDiscountPercent = 0;
-                                                                        }
+                                                                        $tierDiscountPercent = $tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0;
                                                                     }
+
                                                                     $tierPrice = max($tierBasePrice - $tierDiscountAmount, 0);
-                                                                    $tierDiscountPercentText = rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %';
-                                                                    if (is_null($maxQty)) {
-                                                                        $tierRangeText = $minQty . '+';
-                                                                    } else {
-                                                                        $tierRangeText = $minQty . ' - ' . $maxQty;
-                                                                    }
-                                                                    $isActiveTier = $selectedQty >= $minQty && (is_null($maxQty) || $selectedQty <= $maxQty);
-                                                                @endphp
-                                                                <tr class="tier-discount-row {{ $isActiveTier ? 'tier-discount-row-active' : '' }}"
-                                                                    data-min-qty="{{ $minQty }}"
-                                                                    data-max-qty="{{ is_null($maxQty) ? '' : $maxQty }}">
-                                                                    <td>{{ $tierRangeText }}</td>
-                                                                    <td>{{ $tierDiscountPercentText }}</td>
-                                                                    <td>{{ webCurrencyConverter($tierPrice) }}</td>
+                                                                    $tierTableRows[] = [
+                                                                        'minQty' => $minQty,
+                                                                        'maxQty' => $maxQty,
+                                                                        'rangeText' => is_null($maxQty) ? ($minQty . '+') : ($minQty . ' - ' . $maxQty),
+                                                                        'discountPercentText' => rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %',
+                                                                        'priceText' => webCurrencyConverter($tierPrice),
+                                                                        'isActive' => $selectedQty >= $minQty && (is_null($maxQty) || $selectedQty <= $maxQty),
+                                                                    ];
+                                                                }
+                                                            @endphp
+                                                            <tbody>
+                                                            @foreach($tierTableRows as $row)
+                                                                <tr class="tier-discount-row {{ $row['isActive'] ? 'tier-discount-row-active' : '' }}"
+                                                                    data-min-qty="{{ $row['minQty'] }}"
+                                                                    data-max-qty="{{ is_null($row['maxQty']) ? '' : $row['maxQty'] }}">
+                                                                    <td>{{ $row['rangeText'] }}</td>
+                                                                    <td>{{ $row['discountPercentText'] }}</td>
+                                                                    <td>{{ $row['priceText'] }}</td>
                                                                 </tr>
                                                             @endforeach
                                                             </tbody>
