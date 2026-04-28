@@ -226,22 +226,32 @@
                                                             @php($selectedQty = (int)($initialProductConfig['quantity'] ?? 1))
                                                             @foreach($product->tierDiscounts as $tierDiscount)
                                                                 @php
+                                                                    $minQty = (int)$tierDiscount->min_qty;
+                                                                    $maxQty = is_null($tierDiscount->max_qty) ? null : (int)$tierDiscount->max_qty;
                                                                     $tierBasePrice = (float)$product->unit_price;
-                                                                    $tierDiscountAmount = $tierDiscount->discount_type === 'percent'
-                                                                        ? (($tierBasePrice * $tierDiscount->discount) / 100)
-                                                                        : $tierDiscount->discount;
+                                                                    if ($tierDiscount->discount_type === 'percent') {
+                                                                        $tierDiscountAmount = ($tierBasePrice * $tierDiscount->discount) / 100;
+                                                                        $tierDiscountPercent = (float)$tierDiscount->discount;
+                                                                    } else {
+                                                                        $tierDiscountAmount = $tierDiscount->discount;
+                                                                        if ($tierBasePrice > 0) {
+                                                                            $tierDiscountPercent = ($tierDiscountAmount / $tierBasePrice) * 100;
+                                                                        } else {
+                                                                            $tierDiscountPercent = 0;
+                                                                        }
+                                                                    }
                                                                     $tierPrice = max($tierBasePrice - $tierDiscountAmount, 0);
-                                                                    $tierDiscountPercent = $tierDiscount->discount_type === 'percent'
-                                                                        ? (float)$tierDiscount->discount
-                                                                        : ($tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0);
                                                                     $tierDiscountPercentText = rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %';
-                                                                    $tierRangeText = $tierDiscount->min_qty . ($tierDiscount->max_qty ? ' - ' . $tierDiscount->max_qty : '+');
-                                                                    $isActiveTier = $selectedQty >= (int)$tierDiscount->min_qty
-                                                                        && (is_null($tierDiscount->max_qty) || $selectedQty <= (int)$tierDiscount->max_qty);
+                                                                    if (is_null($maxQty)) {
+                                                                        $tierRangeText = $minQty . '+';
+                                                                    } else {
+                                                                        $tierRangeText = $minQty . ' - ' . $maxQty;
+                                                                    }
+                                                                    $isActiveTier = $selectedQty >= $minQty && (is_null($maxQty) || $selectedQty <= $maxQty);
                                                                 @endphp
                                                                 <tr class="tier-discount-row {{ $isActiveTier ? 'tier-discount-row-active' : '' }}"
-                                                                    data-min-qty="{{ (int)$tierDiscount->min_qty }}"
-                                                                    data-max-qty="{{ is_null($tierDiscount->max_qty) ? '' : (int)$tierDiscount->max_qty }}">
+                                                                    data-min-qty="{{ $minQty }}"
+                                                                    data-max-qty="{{ is_null($maxQty) ? '' : $maxQty }}">
                                                                     <td>{{ $tierRangeText }}</td>
                                                                     <td>{{ $tierDiscountPercentText }}</td>
                                                                     <td>{{ webCurrencyConverter($tierPrice) }}</td>
