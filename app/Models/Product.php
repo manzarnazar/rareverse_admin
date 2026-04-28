@@ -360,6 +360,11 @@ class Product extends Model
         return $this->hasMany(DigitalProductVariation::class, 'product_id');
     }
 
+    public function tierDiscounts(): HasMany
+    {
+        return $this->hasMany(ProductTierDiscount::class, 'product_id')->orderBy('min_qty');
+    }
+
     public function tags(): BelongsToMany
     {
         if (strpos(url()->current(), '/api')) {

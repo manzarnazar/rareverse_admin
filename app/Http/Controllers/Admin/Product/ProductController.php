@@ -181,6 +181,7 @@ class ProductController extends BaseController
         $shopId = getInHouseShopConfig('id');
         $dataArray = $service->getAddProductData(request: $request, addedBy: 'admin', shopId: $shopId);
         $savedProduct = $this->productRepo->add(data: $dataArray);
+        $service->syncProductTierDiscounts(product: $savedProduct, request: $request);
         $this->productRepo->addRelatedTags(request: $request, product: $savedProduct);
         $this->translationRepo->add(request: $request, model: 'App\Models\Product', id: $savedProduct->id);
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $savedProduct);
@@ -250,7 +251,7 @@ class ProductController extends BaseController
         $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
         $taxVats = $taxData['taxVats'];
 
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id], relations: ['digitalVariation', 'translations', 'seoInfo', 'digitalProductAuthors.author', 'digitalProductPublishingHouse.publishingHouse']);
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id], relations: ['digitalVariation', 'tierDiscounts', 'translations', 'seoInfo', 'digitalProductAuthors.author', 'digitalProductPublishingHouse.publishingHouse']);
         if (!$product) {
             ToastMagic::error(translate('product_not_found') . '!');
             return redirect()->route('admin.products.list', ['in_house']);
@@ -285,6 +286,7 @@ class ProductController extends BaseController
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
 
         $this->productRepo->update(id: $id, data: $dataArray);
+        $service->syncProductTierDiscounts(product: $product, request: $request);
         $this->productRepo->addRelatedTags(request: $request, product: $product);
         $this->translationRepo->update(request: $request, model: 'App\Models\Product', id: $id);
 

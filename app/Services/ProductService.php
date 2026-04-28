@@ -703,6 +703,60 @@ class ProductService
         return $code;
     }
 
+    public function getTierDiscountData(object $request): array
+    {
+        $tierRows = [];
+        $minQtyRows = $request->input('tier_min_qty', []);
+        $maxQtyRows = $request->input('tier_max_qty', []);
+        $typeRows = $request->input('tier_discount_type', []);
+        $discountRows = $request->input('tier_discount', []);
+
+        if (!is_array($minQtyRows) || count($minQtyRows) === 0) {
+            return [];
+        }
+
+        foreach ($minQtyRows as $index => $minQty) {
+            if ($minQty === null || $minQty === '' || !isset($discountRows[$index]) || $discountRows[$index] === '') {
+                continue;
+            }
+
+            $discountType = $typeRows[$index] ?? 'flat';
+            $discount = (float)$discountRows[$index];
+            $maxQty = $maxQtyRows[$index] ?? null;
+
+            $tierRows[] = [
+                'min_qty' => (int)$minQty,
+                'max_qty' => ($maxQty === '' || $maxQty === null) ? null : (int)$maxQty,
+                'discount_type' => $discountType,
+                'discount' => $discountType === 'flat' ? currencyConverter(amount: $discount) : $discount,
+            ];
+        }
+
+        return $tierRows;
+    }
+
+    public function syncProductTierDiscounts(object $product, object $request): void
+    {
+        $tierRows = $this->getTierDiscountData(request: $request);
+        $product->tierDiscounts()->delete();
+        if (!empty($tierRows)) {
+            $product->tierDiscounts()->createMany($tierRows);
+        }
+    }
+
+    public function getFormattedTierDiscounts(object $product): array
+    {
+        $tierDiscounts = $product->tierDiscounts ?? collect([]);
+        return collect($tierDiscounts)->map(function ($tier) {
+            return [
+                'min_qty' => (int)$tier->min_qty,
+                'max_qty' => $tier->max_qty ? (int)$tier->max_qty : null,
+                'discount_type' => $tier->discount_type,
+                'discount' => $tier->discount_type === 'flat' ? usdToDefaultCurrency($tier->discount) : (float)$tier->discount,
+            ];
+        })->values()->toArray();
+    }
+
     public function getImportBulkProductData(object $request, string $addedBy, int|string $shopId): array
     {
         try {

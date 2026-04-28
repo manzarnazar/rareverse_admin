@@ -81,7 +81,85 @@ $(document).on("ready", function() {
             state.text
         );
     }
+
+    initializeVendorTierDiscountTable();
 });
+
+function getVendorTierRowHtml() {
+    return `<tr class="tier-discount-row">
+        <td><input type="number" min="1" step="1" class="form-control tier-min-qty" name="tier_min_qty[]"></td>
+        <td><input type="number" min="1" step="1" class="form-control tier-max-qty" name="tier_max_qty[]"></td>
+        <td>
+            <select class="form-control tier-discount-type" name="tier_discount_type[]">
+                <option value="flat">flat</option>
+                <option value="percent">percent</option>
+            </select>
+        </td>
+        <td><input type="number" min="0" step="0.01" class="form-control tier-discount-value" name="tier_discount[]"></td>
+        <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm vendor-tier-discount-remove-row">remove</button></td>
+    </tr>`;
+}
+
+function initializeVendorTierDiscountTable() {
+    $(document).on("click", "#vendor-tier-discount-add-row", function() {
+        $("#vendor-tier-discount-table tbody").append(getVendorTierRowHtml());
+    });
+
+    $(document).on("click", ".vendor-tier-discount-remove-row", function() {
+        $(this).closest("tr").remove();
+    });
+}
+
+function validateVendorTierDiscountRows() {
+    const rows = $("#vendor-tier-discount-table tbody .tier-discount-row");
+    if (!rows.length) {
+        return true;
+    }
+
+    let ranges = [];
+    let isValid = true;
+    let unitPrice = parseFloat($("#unit_price").val() || 0);
+
+    rows.each(function() {
+        const minQty = parseInt($(this).find(".tier-min-qty").val(), 10);
+        const maxQtyValue = $(this).find(".tier-max-qty").val();
+        const maxQty = maxQtyValue === "" ? null : parseInt(maxQtyValue, 10);
+        const discountType = $(this).find(".tier-discount-type").val();
+        const discountValue = parseFloat($(this).find(".tier-discount-value").val());
+
+        if (!Number.isInteger(minQty) || minQty < 1 || (maxQty !== null && (!Number.isInteger(maxQty) || maxQty < minQty)) || Number.isNaN(discountValue) || discountValue < 0) {
+            isValid = false;
+            return false;
+        }
+
+        if (discountType === "percent" && discountValue > 100) {
+            isValid = false;
+            return false;
+        }
+
+        if (discountType === "flat" && unitPrice > 0 && discountValue >= unitPrice) {
+            isValid = false;
+            return false;
+        }
+
+        ranges.push({min: minQty, max: maxQty ?? Number.MAX_SAFE_INTEGER});
+    });
+
+    if (!isValid) {
+        toastMagic.error("Please fix tier discount row values.");
+        return false;
+    }
+
+    ranges.sort((a, b) => a.min - b.min);
+    for (let i = 1; i < ranges.length; i++) {
+        if (ranges[i].min <= ranges[i - 1].max) {
+            toastMagic.error("Tier quantity ranges must not overlap.");
+            return false;
+        }
+    }
+
+    return true;
+}
 
 function getProductTypeFunctionality() {
     let productType = $("#product_type").val();
@@ -537,6 +615,7 @@ $(".product-add-requirements-check").on("click", async function() {
                 let formData = new FormData(
                     document.getElementById("product_form")
                 );
+                if (!validateVendorTierDiscountRows()) return false;
                 if (!await validateFormHelper($("#product_form"))) return false;
 
                 $.ajaxSetup({

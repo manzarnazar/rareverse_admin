@@ -327,7 +327,7 @@ class ProductController extends Controller
     {
         $user = Helpers::getCustomerInformation($request);
 
-        $product = Product::active()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::active()->with(['reviews.customer', 'seller.shop', 'tags', 'digitalVariation', 'tierDiscounts', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])
             ->withCount(['wishList' => function ($query) use ($user) {
@@ -336,6 +336,7 @@ class ProductController extends Controller
             ->where(['slug' => $slug])->first();
 
         if (isset($product)) {
+            $tierDiscounts = $this->productService->getFormattedTierDiscounts(product: $product);
             $restockRequestedIds = $this->restockProductRepo->getListWhere(filters: ['product_id' => $product['id']], dataLimit: 'all')?->pluck('id')->toArray() ?? [];
 
             $product = Helpers::product_data_formatting($product, false);
@@ -349,6 +350,7 @@ class ProductController extends Controller
             $product['reviews_count'] = $product->reviews->count();
             $product['digital_product_authors_names'] = $this->productService->getProductAuthorsInfo(product: $product)['names'];
             $product['digital_product_publishing_house_names'] = $this->productService->getProductPublishingHouseInfo(product: $product)['names'];
+            $product['tier_discounts'] = $tierDiscounts;
 
             if ($user != 'offline' && count($restockRequestedIds) > 0) {
 

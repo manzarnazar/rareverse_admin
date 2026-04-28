@@ -371,6 +371,34 @@
                                                         @endforeach
                                                     @endif
 
+                                                    @if($product->tierDiscounts && $product->tierDiscounts->count() > 0)
+                                                        <div class="mb-4">
+                                                            <div class="table-responsive">
+                                                                <table class="table table-bordered mb-0">
+                                                                    <thead class="table-light">
+                                                                    <tr>
+                                                                        <th>{{ translate('Qty') }}</th>
+                                                                        <th>{{ translate('Dto_(%)') }}</th>
+                                                                        <th>{{ translate('PVP') }}</th>
+                                                                    </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                    @foreach($product->tierDiscounts as $tierDiscount)
+                                                                        @php($tierBasePrice = (float) $product->unit_price)
+                                                                        @php($tierDiscountAmount = $tierDiscount->discount_type === 'percent' ? (($tierBasePrice * $tierDiscount->discount) / 100) : $tierDiscount->discount)
+                                                                        @php($tierPrice = max($tierBasePrice - $tierDiscountAmount, 0))
+                                                                        <tr>
+                                                                            <td>{{ $tierDiscount->min_qty }}{{ $tierDiscount->max_qty ? ' - '.$tierDiscount->max_qty : '+' }}</td>
+                                                                            <td>{{ $tierDiscount->discount_type === 'percent' ? rtrim(rtrim(number_format($tierDiscount->discount, 2, '.', ''), '0'), '.') . ' %' : rtrim(rtrim(number_format(($tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0), 2, '.', ''), '0'), '.') . ' %' }}</td>
+                                                                            <td>{{ webCurrencyConverter($tierPrice) }}</td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
 
                                                     <div class="d-flex gap-4 flex-wrap align-items-center mb-30">
                                                         <span class="text-muted">{{translate('Qty')}}</span>

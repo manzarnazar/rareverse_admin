@@ -62,6 +62,8 @@ class CartManager
                     }]);
                 }, 'clearanceSale' => function ($query) {
                     return $query->active();
+                }, 'tierDiscounts' => function ($query) {
+                    return $query->orderBy('min_qty');
                 }, 'taxVats' => function ($query) {
                     return $query->with(['tax'])->wherehas('tax', function ($query) {
                         return $query->where('is_active', 1);
@@ -87,7 +89,8 @@ class CartManager
                 product: $item->product,
                 type: 'discounted_amount',
                 result: 'value',
-                price: $item->price
+                price: $item->price,
+                quantity: $item->quantity
             );
         }
 
@@ -101,6 +104,8 @@ class CartManager
         $cartItems = Cart::with(['product' => function ($query) {
                 return $query->active()->with(['clearanceSale' => function ($query) {
                     return $query->active();
+                }, 'tierDiscounts' => function ($query) {
+                    return $query->orderBy('min_qty');
                 }]);
             }])
             ->whereHas('product', function ($query) {
@@ -121,7 +126,8 @@ class CartManager
                     product: $item->product,
                     type: 'discounted_amount',
                     result: 'value',
-                    price: $item->price
+                    price: $item->price,
+                    quantity: $item->quantity
                 );
             }
         return $cartItems;
@@ -132,6 +138,8 @@ class CartManager
         $cartItems =  Cart::with(['product' => function ($query) {
             return $query->active()->with(['clearanceSale' => function ($query) {
                     return $query->active();
+                }, 'tierDiscounts' => function ($query) {
+                    return $query->orderBy('min_qty');
                 }]);
             }])
             ->whereHas('product', function ($query) {
@@ -153,7 +161,8 @@ class CartManager
                 product: $item->product,
                 type: 'discounted_amount',
                 result: 'value',
-                price: $item->price
+                price: $item->price,
+                quantity: $item->quantity
             );
         }
         return $cartItems->groupBy('cart_group_id');
@@ -295,7 +304,7 @@ class CartManager
         $total = 0;
         if (!empty($cart)) {
             foreach ($cart as $item) {
-                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price']);
+                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price'], quantity: $item['quantity']);
                 $productSubtotal = ($item['price'] - $discount) * $item['quantity'];
                 $total += $productSubtotal;
             }
@@ -315,7 +324,7 @@ class CartManager
         $total = 0;
         if (!empty($cart)) {
             foreach ($cart as $item) {
-                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price']);
+                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price'], quantity: $item['quantity']);
                 $productSubtotal = ($item['price'] - $discount) * $item['quantity'];
                 $total += $productSubtotal;
             }
@@ -334,7 +343,7 @@ class CartManager
         $total = 0;
         if (!empty($cart)) {
             foreach ($cart as $item) {
-                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price']);
+                $discount = getProductPriceByType(product: $item['product'], type: 'discounted_amount', result: 'value', price: $item['price'], quantity: $item['quantity']);
                 $productSubtotal = ($item['price'] - $discount) * $item['quantity'];
                 $total += $productSubtotal;
             }
@@ -448,7 +457,7 @@ class CartManager
             $price = $product->unit_price;
         }
 
-        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
+        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price, quantity: $request['quantity']);
 
         $cartArray += [
             'customer_id' => ($user == 'offline' ? $guestId : $user['id']),
@@ -599,7 +608,7 @@ class CartManager
             $isGuest = 0;
         }
 
-        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price);
+        $getProductDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $price, quantity: $request['quantity']);
         $cartArray = [
             'customer_id' => $customerId,
             'product_id' => $request['id'],
@@ -677,6 +686,8 @@ class CartManager
 
         $product = Product::with(['digitalVariation', 'clearanceSale' => function ($query) {
             return $query->active();
+        }, 'tierDiscounts' => function ($query) {
+            return $query->orderBy('min_qty');
         }])->where(['id' => $request['id']])->first();
 
         if($product['status'] == 0){
@@ -736,7 +747,11 @@ class CartManager
             ];
         }
 
-        $product = Product::find($cart['product_id']);
+        $product = Product::with(['clearanceSale' => function ($query) {
+            return $query->active();
+        }, 'tierDiscounts' => function ($query) {
+            return $query->orderBy('min_qty');
+        }])->find($cart['product_id']);
         $count = count(json_decode($product->variation));
         if ($count) {
             for ($i = 0; $i < $count; $i++) {
@@ -756,6 +771,13 @@ class CartManager
             $qty = $request->quantity;
             $cart['quantity'] = $request->quantity;
             $cart['shipping_cost'] = $product->product_type == 'physical' ? CartManager::get_shipping_cost_for_product_category_wise($product, $request->quantity) : 0;
+            $cart['discount'] = getProductPriceByType(
+                product: $product,
+                type: 'discounted_amount',
+                result: 'value',
+                price: $cart['price'],
+                quantity: $request->quantity
+            );
         }
 
         $cart->save();

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Currency;
+use App\Models\ProductTierDiscount;
 
 if (!function_exists('loadCurrency')) {
     /**
@@ -291,10 +292,19 @@ if (!function_exists('getFormatCurrency')) {
 
 
 if (!function_exists('getProductPriceByType')) {
-    function getProductPriceByType($product, $type, $result = 'value', $price = 0, $from = 'web'): float|int|string
+    function getProductPriceByType($product, $type, $result = 'value', $price = 0, $from = 'web', $quantity = null): float|int|string
     {
+        $tierDiscount = getProductTierDiscountByQuantity(product: $product, quantity: $quantity);
+
         if ($type == 'discount') {
-            if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
+            if ($tierDiscount) {
+                if ($tierDiscount['discount_type'] == 'percent') {
+                    $amount = round($tierDiscount['discount'], (!empty($decimalPointSettings) ? $decimalPointSettings: 0));
+                    return $result == 'value' ? $amount : $amount.'%';
+                } else if ($tierDiscount['discount_type'] == 'flat') {
+                    return $result == 'value' ? $tierDiscount['discount'] : webCurrencyConverter(amount: $tierDiscount['discount']);
+                }
+            } else if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
                 $clearanceSale = $product['clearanceSale'] ?? $product['clearance_sale'];
                 if ($clearanceSale['discount_type'] == 'percentage') {
                     $amount = round($clearanceSale['discount_amount'], (!empty($decimalPointSettings) ? $decimalPointSettings: 0));
@@ -312,7 +322,9 @@ if (!function_exists('getProductPriceByType')) {
 
         if ($type == 'discount_type') {
             $discountType = $product['discount_type'];
-            if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
+            if ($tierDiscount) {
+                $discountType = $tierDiscount['discount_type'];
+            } else if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
                 $clearanceSale = $product['clearanceSale'] ?? $product['clearance_sale'];
                 $discountType = $clearanceSale['discount_type'];
             }
@@ -321,8 +333,8 @@ if (!function_exists('getProductPriceByType')) {
 
         if ($type == 'discounted_unit_price') {
             $unitPrice = $price != 0 ? $price : $product['unit_price'];
-            if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
-                $amount = $unitPrice - getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $unitPrice);
+            if ($tierDiscount || (isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
+                $amount = $unitPrice - getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $unitPrice, quantity: $quantity);
             } else {
                 $amount = $unitPrice - (getProductDiscount(product: $product, price: $unitPrice));
             }
@@ -334,7 +346,14 @@ if (!function_exists('getProductPriceByType')) {
         }
 
         if ($type == 'discounted_amount') {
-            if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
+            if ($tierDiscount) {
+                if ($tierDiscount['discount_type'] == 'percent') {
+                    $discountAmount = ($price * $tierDiscount['discount']) / 100;
+                } else {
+                    $discountAmount = $tierDiscount['discount'];
+                }
+                $amount = floatval(min($discountAmount, $price));
+            } else if ((isset($product['clearanceSale']) && $product['clearanceSale']) || isset($product['clearance_sale']) && $product['clearance_sale']) {
                 $clearanceSale = $product['clearanceSale'] ?? $product['clearance_sale'];
                 $discountAmount = 0;
                 if ($clearanceSale['discount_type'] == 'percentage') {
@@ -354,6 +373,41 @@ if (!function_exists('getProductPriceByType')) {
         }
 
         return 0;
+    }
+}
+
+if (!function_exists('getProductTierDiscountByQuantity')) {
+    function getProductTierDiscountByQuantity($product, $quantity = null): ?array
+    {
+        if (!$quantity || $quantity < 1) {
+            return null;
+        }
+
+        $tierDiscounts = [];
+        if (isset($product['tierDiscounts']) && $product['tierDiscounts']) {
+            $tierDiscounts = is_array($product['tierDiscounts']) ? $product['tierDiscounts'] : $product['tierDiscounts']->toArray();
+        } else if (isset($product['tier_discounts']) && is_array($product['tier_discounts'])) {
+            $tierDiscounts = $product['tier_discounts'];
+        } else if (isset($product['id'])) {
+            $tierDiscounts = ProductTierDiscount::where('product_id', $product['id'])
+                ->orderBy('min_qty')
+                ->get()
+                ->toArray();
+        }
+
+        foreach ($tierDiscounts as $tierDiscount) {
+            $minQty = (int)($tierDiscount['min_qty'] ?? 0);
+            $maxQty = $tierDiscount['max_qty'] ?? null;
+            $maxQty = is_null($maxQty) ? null : (int)$maxQty;
+            if ($quantity >= $minQty && (is_null($maxQty) || $quantity <= $maxQty)) {
+                return [
+                    'discount_type' => $tierDiscount['discount_type'],
+                    'discount' => (float)$tierDiscount['discount'],
+                ];
+            }
+        }
+
+        return null;
     }
 }
 

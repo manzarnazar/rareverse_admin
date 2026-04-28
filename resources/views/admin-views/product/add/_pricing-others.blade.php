@@ -47,6 +47,52 @@
                                        value="{{ old('unit_price') }}" class="form-control"  data-required-msg="{{ translate('unit_price_is_required') }}" required>
                             </div>
                         </div>
+                        <div class="col-12">
+                            <div class="form-group mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0">{{ translate('quantity_tier_discounts') }}</label>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="admin-tier-discount-add-row">
+                                        {{ translate('add_tier') }}
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0" id="admin-tier-discount-table">
+                                        <thead>
+                                        <tr>
+                                            <th>{{ translate('min_qty') }}</th>
+                                            <th>{{ translate('max_qty') }} ({{ translate('optional') }})</th>
+                                            <th>{{ translate('discount_type') }}</th>
+                                            <th>{{ translate('discount') }}</th>
+                                            <th class="text-center">{{ translate('action') }}</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        @php($tierMin = old('tier_min_qty', []))
+                                        @php($tierMax = old('tier_max_qty', []))
+                                        @php($tierType = old('tier_discount_type', []))
+                                        @php($tierDiscount = old('tier_discount', []))
+                                        @forelse($tierMin as $index => $minQty)
+                                            <tr class="tier-discount-row">
+                                                <td><input type="number" min="1" step="1" class="form-control tier-min-qty" name="tier_min_qty[]" value="{{ $minQty }}"></td>
+                                                <td><input type="number" min="1" step="1" class="form-control tier-max-qty" name="tier_max_qty[]" value="{{ $tierMax[$index] ?? '' }}"></td>
+                                                <td>
+                                                    <select class="form-control form-select tier-discount-type" name="tier_discount_type[]">
+                                                        <option value="flat" {{ ($tierType[$index] ?? 'flat') == 'flat' ? 'selected' : '' }}>{{ translate('flat') }}</option>
+                                                        <option value="percent" {{ ($tierType[$index] ?? '') == 'percent' ? 'selected' : '' }}>{{ translate('percent') }}</option>
+                                                    </select>
+                                                </td>
+                                                <td><input type="number" min="0" step="0.01" class="form-control tier-discount-value" name="tier_discount[]" value="{{ $tierDiscount[$index] ?? '' }}"></td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm admin-tier-discount-remove-row">{{ translate('remove') }}</button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                        @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-md-6 col-lg-4" id="">
                             <div class="form-group">
                                 <label class="form-label" for="minimum_order_qty">

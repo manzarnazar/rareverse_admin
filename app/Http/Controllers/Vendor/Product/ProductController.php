@@ -214,6 +214,7 @@ class ProductController extends BaseController
         $shopId = $this->shopRepo->getFirstWhere(params: ['seller_id' => auth('seller')->user()->id])['id'];
         $dataArray = $service->getAddProductData(request: $request, addedBy: 'seller', shopId: $shopId);
         $savedProduct = $this->productRepo->add(data: $dataArray);
+        $service->syncProductTierDiscounts(product: $savedProduct, request: $request);
         $this->productRepo->addRelatedTags(request: $request, product: $savedProduct);
         $this->translationRepo->add(request: $request, model: 'App\Models\Product', id: $savedProduct->id);
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $savedProduct);
@@ -242,7 +243,7 @@ class ProductController extends BaseController
         $productWiseTax = $taxData['productWiseTax'] && !$taxData['is_included'];
         $taxVats = $taxData['taxVats'];
 
-        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo', 'digitalProductAuthors', 'digitalProductPublishingHouse']);
+        $product = $this->productRepo->getFirstWhereWithoutGlobalScope(params: ['id' => $id, 'user_id' => auth('seller')->id(), 'added_by' => 'seller'], relations: ['translations', 'seoInfo', 'tierDiscounts', 'digitalProductAuthors', 'digitalProductPublishingHouse']);
         if (!$product) {
             ToastMagic::error(translate('invalid_product'));
             return redirect()->route('vendor.products.list', ['type' => 'all']);
@@ -278,6 +279,7 @@ class ProductController extends BaseController
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
 
         $this->productRepo->update(id: $id, data: $dataArray);
+        $service->syncProductTierDiscounts(product: $product, request: $request);
         $this->productRepo->addRelatedTags(request: $request, product: $product);
         $this->translationRepo->update(request: $request, model: 'App\Models\Product', id: $id);
 

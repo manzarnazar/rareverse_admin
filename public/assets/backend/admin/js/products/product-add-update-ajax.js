@@ -111,6 +111,9 @@ document.addEventListener("click", async function(e) {
                     let formData = new FormData(
                         document.getElementById("product_form")
                     );
+                    if (typeof validateTierDiscountRows === "function" && !validateTierDiscountRows()) {
+                        return false;
+                    }
                     if (!await validateFormHelper($("#product_form"))) return false;
 
                     renderProductAjaxSetup();

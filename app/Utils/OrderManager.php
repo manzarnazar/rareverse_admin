@@ -999,7 +999,7 @@ class OrderManager
         $taxConfig = self::getTaxSystemType();
 
         foreach ($vendorCart['cart_list'] as $cartSingleItem) {
-            $product = Product::where(['id' => $cartSingleItem['product_id']])->with(['digitalVariation', 'clearanceSale' => function ($query) {
+            $product = Product::where(['id' => $cartSingleItem['product_id']])->with(['digitalVariation', 'tierDiscounts', 'clearanceSale' => function ($query) {
                 return $query->active();
             }])->first()->toArray();
             unset($product['is_shop_temporary_close']);
@@ -1027,7 +1027,13 @@ class OrderManager
                 $product['storage_path'] = $product['digital_file_ready_storage_type'] ?? 'public';
             }
 
-            $productDiscount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $cartSingleItem['price']);
+            $productDiscount = $cartSingleItem['discount'] ?? getProductPriceByType(
+                product: $product,
+                type: 'discounted_amount',
+                result: 'value',
+                price: $cartSingleItem['price'],
+                quantity: $cartSingleItem['quantity']
+            );
             $orderDetails = [
                 'order_id' => $orderId,
                 'product_id' => $cartSingleItem['product_id'],

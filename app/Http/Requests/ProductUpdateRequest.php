@@ -393,8 +393,102 @@ class ProductUpdateRequest extends FormRequest
                         );
                     }
                 }
+
+                $this->validateTierDiscountInput($validator);
             }
         ];
+    }
+
+    private function validateTierDiscountInput(Validator $validator): void
+    {
+        $minQtyRows = $this->input('tier_min_qty', []);
+        $maxQtyRows = $this->input('tier_max_qty', []);
+        $typeRows = $this->input('tier_discount_type', []);
+        $discountRows = $this->input('tier_discount', []);
+
+        if (!is_array($minQtyRows) || count($minQtyRows) === 0) {
+            return;
+        }
+
+        $rowCount = count($minQtyRows);
+        if (count($maxQtyRows) !== $rowCount || count($typeRows) !== $rowCount || count($discountRows) !== $rowCount) {
+            $validator->errors()->add('tier_discount', translate('Tier_discount_rows_are_invalid') . '!');
+            return;
+        }
+
+        $ranges = [];
+        $minimumPrice = $this->getMinimumApplicablePrice();
+
+        for ($index = 0; $index < $rowCount; $index++) {
+            $minQty = $minQtyRows[$index];
+            $maxQty = $maxQtyRows[$index];
+            $discountType = $typeRows[$index] ?? null;
+            $discount = $discountRows[$index];
+
+            if ($minQty === null || $minQty === '' || $discount === null || $discount === '' || !$discountType) {
+                $validator->errors()->add('tier_discount', translate('Tier_discount_rows_are_invalid') . '!');
+                return;
+            }
+
+            if (!is_numeric($minQty) || $minQty < 1) {
+                $validator->errors()->add('tier_discount', translate('minimum_order_quantity_must_be_positive!'));
+                return;
+            }
+
+            if ($maxQty !== null && $maxQty !== '' && (!is_numeric($maxQty) || (int)$maxQty < (int)$minQty)) {
+                $validator->errors()->add('tier_discount', translate('Tier_maximum_quantity_must_be_greater_than_or_equal_to_minimum_quantity') . '!');
+                return;
+            }
+
+            if (!in_array($discountType, ['flat', 'percent'], true) || !is_numeric($discount) || $discount < 0) {
+                $validator->errors()->add('tier_discount', translate('Tier_discount_rows_are_invalid') . '!');
+                return;
+            }
+
+            if ($discountType === 'percent' && $discount > 100) {
+                $validator->errors()->add('tier_discount', translate('Tier_percent_discount_cannot_be_more_than_100') . '!');
+                return;
+            }
+
+            if ($discountType === 'flat' && $minimumPrice > 0 && currencyConverter(amount: $discount) >= $minimumPrice) {
+                $validator->errors()->add('tier_discount', translate('discount_can_not_be_more_or_equal_to_the_price') . '!');
+                return;
+            }
+
+            $ranges[] = [
+                'min' => (int)$minQty,
+                'max' => ($maxQty === null || $maxQty === '') ? PHP_INT_MAX : (int)$maxQty,
+            ];
+        }
+
+        usort($ranges, fn($a, $b) => $a['min'] <=> $b['min']);
+        for ($i = 1; $i < count($ranges); $i++) {
+            if ($ranges[$i]['min'] <= $ranges[$i - 1]['max']) {
+                $validator->errors()->add('tier_discount', translate('Tier_quantity_ranges_must_not_overlap') . '!');
+                return;
+            }
+        }
+    }
+
+    private function getMinimumApplicablePrice(): float
+    {
+        $minimumPrice = (float)$this->input('unit_price', 0);
+        foreach ($this->all() as $requestKey => $requestValue) {
+            if (str_contains($requestKey, 'price_') && is_numeric($requestValue) && $requestValue >= 0) {
+                $minimumPrice = $minimumPrice > 0 ? min($minimumPrice, (float)$requestValue) : (float)$requestValue;
+            }
+        }
+
+        $digitalPrices = $this->input('digital_product_price', []);
+        if (is_array($digitalPrices)) {
+            foreach ($digitalPrices as $digitalPrice) {
+                if (is_numeric($digitalPrice) && $digitalPrice >= 0) {
+                    $minimumPrice = $minimumPrice > 0 ? min($minimumPrice, (float)$digitalPrice) : (float)$digitalPrice;
+                }
+            }
+        }
+
+        return currencyConverter(amount: $minimumPrice);
     }
 
     /**
