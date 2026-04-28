@@ -55,7 +55,7 @@ class CartController extends Controller
         $discountedUnitPrice = 0;
         $color_name = '';
         $requestQuantity = $request['quantity'];
-        $product = Product::with(['digitalVariation', 'clearanceSale' => function ($query) {
+        $product = Product::with(['digitalVariation', 'tierDiscounts', 'clearanceSale' => function ($query) {
             return $query->active();
         }])->where(['id' => $request['id']])->first();
         $productVariationCode = $request['product_variation_code'];
@@ -95,7 +95,7 @@ class CartController extends Controller
             $count = count(json_decode($product->variation));
             for ($i = 0; $i < $count; $i++) {
                 if (json_decode($product->variation)[$i]->type == $string) {
-                    $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: json_decode($product->variation)[$i]->price);
+                    $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: json_decode($product->variation)[$i]->price, quantity: $requestQuantity);
                     $price = json_decode($product->variation)[$i]->price - $discount;
                     $discountedUnitPrice = json_decode($product->variation)[$i]->price - $discount;
                     $unit_price = json_decode($product->variation)[$i]->price;
@@ -103,7 +103,7 @@ class CartController extends Controller
                 }
             }
         } else {
-            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $product->unit_price);
+            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $product->unit_price, quantity: $requestQuantity);
             $price = $product->unit_price - $discount;
             $discountedUnitPrice = $product->unit_price - $discount;
             $unit_price = $product->unit_price;
@@ -112,7 +112,7 @@ class CartController extends Controller
 
         $digitalVariation = DigitalProductVariation::where(['product_id' => $product['id'], 'variant_key' => $request['variant_key']])->first();
         if ($product['product_type'] == 'digital' && $digitalVariation) {
-            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $digitalVariation['price']);
+            $discount = getProductPriceByType(product: $product, type: 'discounted_amount', result: 'value', price: $digitalVariation['price'], quantity: $requestQuantity);
             $price = $digitalVariation['price'] - $discount;
             $discountedUnitPrice = $digitalVariation['price'] - $discount;
             $unit_price = $digitalVariation['price'];
@@ -148,11 +148,13 @@ class CartController extends Controller
                 ])->count() > 0);
         }
 
-        $discountType = getProductPriceByType(product: $product, type: 'discount_type', result: 'string');
+        $discountType = getProductPriceByType(product: $product, type: 'discount_type', result: 'string', quantity: $requestQuantity);
 
         return [
             'price' => webCurrencyConverter($price * $requestQuantity),
-            'discount' => $discountType == 'flat' ? webCurrencyConverter($discount) : getProductPriceByType(product: $product, type: 'discount', result: 'value') . '%',
+            'discount' => $discountType == 'flat'
+                ? webCurrencyConverter($discount)
+                : getProductPriceByType(product: $product, type: 'discount', result: 'value', quantity: $requestQuantity) . '%',
             'discount_type' => $discountType,
             'discount_amount' => $discount,
             'quantity' => $product['product_type'] == 'physical' ? $quantity : 100,
