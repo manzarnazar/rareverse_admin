@@ -5,6 +5,12 @@
 @push('css_or_js')
     @include(VIEW_FILE_NAMES['product_seo_meta_content_partials'], ['metaContentData' => $product?->seoInfo, 'productDetails' => $product])
     <link rel="stylesheet" href="{{ theme_asset(path: 'public/assets/front-end/css/product-details.css') }}"/>
+    <style>
+        .tier-discount-row-active td {
+            background-color: #eef5ff;
+            font-weight: 600;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -209,7 +215,7 @@
                                                 <div class="">
                                                     <div class="table-responsive">
                                                         <table class="table table-bordered mb-0">
-                                                            <thead class="table-light">
+                                                            <thead>
                                                             <tr>
                                                                 <th>{{ translate('Qty') }}</th>
                                                                 <th>{{ translate('Dto_(%)') }}</th>
@@ -217,6 +223,7 @@
                                                             </tr>
                                                             </thead>
                                                             <tbody>
+                                                            @php($selectedQty = (int)($initialProductConfig['quantity'] ?? 1))
                                                             @foreach($product->tierDiscounts as $tierDiscount)
                                                                 @php
                                                                     $tierBasePrice = (float)$product->unit_price;
@@ -229,8 +236,12 @@
                                                                         : ($tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0);
                                                                     $tierDiscountPercentText = rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %';
                                                                     $tierRangeText = $tierDiscount->min_qty . ($tierDiscount->max_qty ? ' - ' . $tierDiscount->max_qty : '+');
+                                                                    $isActiveTier = $selectedQty >= (int)$tierDiscount->min_qty
+                                                                        && (is_null($tierDiscount->max_qty) || $selectedQty <= (int)$tierDiscount->max_qty);
                                                                 @endphp
-                                                                <tr>
+                                                                <tr class="tier-discount-row {{ $isActiveTier ? 'tier-discount-row-active' : '' }}"
+                                                                    data-min-qty="{{ (int)$tierDiscount->min_qty }}"
+                                                                    data-max-qty="{{ is_null($tierDiscount->max_qty) ? '' : (int)$tierDiscount->max_qty }}">
                                                                     <td>{{ $tierRangeText }}</td>
                                                                     <td>{{ $tierDiscountPercentText }}</td>
                                                                     <td>{{ webCurrencyConverter($tierPrice) }}</td>
@@ -1131,6 +1142,31 @@
                 }
             });
 
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+            function highlightActiveTierRow() {
+                let qty = parseInt($('.add-to-cart-details-form .product-details-cart-qty').val(), 10);
+                if (isNaN(qty) || qty < 1) {
+                    qty = 1;
+                }
+
+                $('.tier-discount-row').removeClass('tier-discount-row-active');
+                $('.tier-discount-row').each(function () {
+                    const minQty = parseInt($(this).data('min-qty'), 10);
+                    const maxRaw = $(this).data('max-qty');
+                    const maxQty = (maxRaw === '' || maxRaw === undefined || maxRaw === null) ? null : parseInt(maxRaw, 10);
+
+                    if (qty >= minQty && (maxQty === null || qty <= maxQty)) {
+                        $(this).addClass('tier-discount-row-active');
+                        return false;
+                    }
+                });
+            }
+
+            highlightActiveTierRow();
+            $(document).on('input change', '.add-to-cart-details-form .product-details-cart-qty', highlightActiveTierRow);
         });
     </script>
 @endpush
