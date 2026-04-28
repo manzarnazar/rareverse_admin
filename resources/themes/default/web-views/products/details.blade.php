@@ -6,6 +6,10 @@
     @include(VIEW_FILE_NAMES['product_seo_meta_content_partials'], ['metaContentData' => $product?->seoInfo, 'productDetails' => $product])
     <link rel="stylesheet" href="{{ theme_asset(path: 'public/assets/front-end/css/product-details.css') }}"/>
     <style>
+        .tier-discount-table thead th {
+            background: transparent !important;
+        }
+
         .tier-discount-row-active td {
             background-color: #eef5ff;
             font-weight: 600;
@@ -214,7 +218,7 @@
                                             @if($product->tierDiscounts && $product->tierDiscounts->count() > 0)
                                                 <div class="">
                                                     <div class="table-responsive">
-                                                        <table class="table table-bordered mb-0">
+                                                        <table class="table table-bordered mb-0 tier-discount-table">
                                                             <thead>
                                                             <tr>
                                                                 <th>{{ translate('Qty') }}</th>
