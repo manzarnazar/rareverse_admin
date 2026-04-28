@@ -8,6 +8,9 @@
     <style>
         .tier-discount-table thead th {
             background: transparent !important;
+            background-color: transparent !important;
+            --bs-table-bg: transparent !important;
+            --bs-table-accent-bg: transparent !important;
         }
 
         .tier-discount-row-active td {
