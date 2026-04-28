@@ -338,10 +338,6 @@ class ProductController extends Controller
         if (isset($product)) {
             $restockRequestedIds = $this->restockProductRepo->getListWhere(filters: ['product_id' => $product['id']], dataLimit: 'all')?->pluck('id')->toArray() ?? [];
 
-            $wholesaleTiers = $product->relationLoaded('wholesalePricing')
-                ? $product->wholesalePricing
-                : $product->wholesalePricing()->get();
-
             $product = Helpers::product_data_formatting($product, false);
             if (isset($product->reviews) && !empty($product->reviews)) {
                 $overallRating = getOverallRating($product?->reviews);
@@ -366,7 +362,6 @@ class ProductController extends Controller
                 $product['restock_requested_list'] = [];
                 $product['is_restock_requested'] = 0;
             }
-// Resolved: remove conflicting wholesale pricing block as per parent of 2a88c7d (no wholesale pricing functionality here)
         }
         return response()->json($product, 200);
     }

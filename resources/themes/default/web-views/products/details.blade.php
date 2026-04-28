@@ -377,8 +377,6 @@
                                                 </div>
                                             </div>
 
-                                            @include('partials.wholesale-pricing-table', ['product' => $product])
-
                                             <div class="__btn-grp product-add-and-buy-section-parent">
 
                                                 <?php

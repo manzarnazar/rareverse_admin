@@ -81,18 +81,7 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function getWebFirstWhereActive(array $params, array $relations = [], array $withCount = []): ?Model
     {
-        $numericRelationNames = [];
-        foreach ($relations as $key => $value) {
-            if (is_int($key) && is_string($value) && ! str_contains($value, '.')) {
-                $numericRelationNames[] = $value;
-            }
-        }
-        $numericRelationNames = array_values(array_unique($numericRelationNames));
-
         return $this->product->active()
-            ->when($numericRelationNames !== [], function ($query) use ($numericRelationNames) {
-                return $query->with($numericRelationNames);
-            })
             ->when(isset($relations['reviews']), function ($query) use ($relations) {
                 return $query->with($relations['reviews']);
             })
