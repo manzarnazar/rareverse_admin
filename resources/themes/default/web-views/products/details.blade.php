@@ -218,13 +218,21 @@
                                                             </thead>
                                                             <tbody>
                                                             @foreach($product->tierDiscounts as $tierDiscount)
-                                                                @php($tierBasePrice = (float) $product->unit_price)
-                                                                @php($tierDiscountAmount = $tierDiscount->discount_type === 'percent' ? (($tierBasePrice * $tierDiscount->discount) / 100) : $tierDiscount->discount)
-                                                                @php($tierPrice = max($tierBasePrice - $tierDiscountAmount, 0))
-                                                                @php($tierDiscountPercent = $tierDiscount->discount_type === 'percent' ? (float)$tierDiscount->discount : ($tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0))
+                                                                @php
+                                                                    $tierBasePrice = (float)$product->unit_price;
+                                                                    $tierDiscountAmount = $tierDiscount->discount_type === 'percent'
+                                                                        ? (($tierBasePrice * $tierDiscount->discount) / 100)
+                                                                        : $tierDiscount->discount;
+                                                                    $tierPrice = max($tierBasePrice - $tierDiscountAmount, 0);
+                                                                    $tierDiscountPercent = $tierDiscount->discount_type === 'percent'
+                                                                        ? (float)$tierDiscount->discount
+                                                                        : ($tierBasePrice > 0 ? (($tierDiscountAmount / $tierBasePrice) * 100) : 0);
+                                                                    $tierDiscountPercentText = rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %';
+                                                                    $tierRangeText = $tierDiscount->min_qty . ($tierDiscount->max_qty ? ' - ' . $tierDiscount->max_qty : '+');
+                                                                @endphp
                                                                 <tr>
-                                                                    <td>{{ $tierDiscount->min_qty }}{{ $tierDiscount->max_qty ? ' - '.$tierDiscount->max_qty : '+' }}</td>
-                                                                    <td>{{ rtrim(rtrim(number_format($tierDiscountPercent, 2, '.', ''), '0'), '.') . ' %' }}</td>
+                                                                    <td>{{ $tierRangeText }}</td>
+                                                                    <td>{{ $tierDiscountPercentText }}</td>
                                                                     <td>{{ webCurrencyConverter($tierPrice) }}</td>
                                                                 </tr>
                                                             @endforeach
