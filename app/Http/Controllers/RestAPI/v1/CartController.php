@@ -131,7 +131,7 @@ class CartController extends Controller
                     }
                 }
 
-                $data['discount'] = getProductPriceByType(product: $data['product'], type: 'discounted_amount', result: 'value', price: $data['price']);
+                $data['discount'] = getProductPriceByType(product: $data['product'], type: 'discounted_amount', result: 'value', price: $data['price'], quantity: $data['quantity']);
                 unset($data['product']['variation']);
                 return $data;
             });

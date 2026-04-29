@@ -1024,6 +1024,7 @@ class ProductController extends Controller
         ];
 
         $product = Product::create($productArray);
+        $this->productService->syncProductTierDiscounts(product: $product, request: $request);
 
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
         $digitalFileArray = self::getAddProductDigitalVariationData(request: $request, product: $product);
@@ -1173,7 +1174,10 @@ class ProductController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo')->withCount('reviews')->find($id);
+        $product = Product::withoutGlobalScopes()->with('translations', 'tags', 'digitalVariation', 'seoInfo', 'tierDiscounts')->withCount('reviews')->find($id);
+        if ($product) {
+            $product['tier_discounts'] = $this->productService->getFormattedTierDiscounts(product: $product);
+        }
         $product = Helpers::product_data_formatting($product);
 
         return response()->json($product, 200);
@@ -1540,6 +1544,7 @@ class ProductController extends Controller
         }
 
         Product::where('id', $id)->update($productArray);
+        $this->productService->syncProductTierDiscounts(product: $product, request: $request);
 
         $this->updateProductAuthorAndPublishingHouse(request: $request, product: $product);
         self::getDigitalProductUpdateProcess($request, $product);
