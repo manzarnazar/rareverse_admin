@@ -193,7 +193,7 @@
                                                  </label>
                                                  <input class="form-control" type="text"
                                                      name="tax_identification_number"
-                                                     placeholder="{{ translate('type_your_user_name') }}">
+                                                     placeholder="{{ translate('type_your_TIN_number') }}">
                                              </div>
                                              <div class="form-group mb-4">
                                                  <label class="mb-2 text-capitalize" for="">

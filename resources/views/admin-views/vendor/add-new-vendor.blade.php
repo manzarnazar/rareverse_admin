@@ -378,7 +378,7 @@
                                         {{ translate('taxpayer_identification_number(TIN)') }}
                                     </label>
                                     <input class="form-control" type="text" name="tax_identification_number"
-                                        placeholder="{{ translate('type_your_user_name') }}">
+                                        placeholder="{{ translate('type_your_TIN_number') }}">
                                 </div>
                                 <div class="form-group mb-0">
                                     <label class="form-label mb-2" for="">
