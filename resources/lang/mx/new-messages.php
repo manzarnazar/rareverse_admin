@@ -94,4 +94,11 @@ return [
 	"Your_subscription_successfully_done" => "Your subscription successfully done",
 	"el_nombre_es_obligatorio" => "El nombre es obligatorio",
 	"El_número_de_teléfono_debe_tener_al_menos_4_caracteres." => "El número de teléfono debe tener al menos 4 caracteres.",
+	"PVP" => "PVP",
+	"Dto_(%)" => "Dto (%)",
+	"quantity_tier_discounts" => "Quantity tier discounts",
+	"add_tier" => "Add tier",
+	"min_qty" => "Min qty",
+	"max_qty" => "Max qty",
+	"JPG,_JPEG,_PNG_Image_size_:_Max_" => "JPG, JPEG, PNG Image size : Max ",
 ];

@@ -906,4 +906,12 @@ return [
 	"The_minimum_order_quantity_must_be_positive!" => "The minimum order quantity must be positive!",
 	"successfully_product_added!" => "Successfully product added!",
 	"Successfully_product_updated!" => "Successfully product updated!",
+	"quantity_tier_discounts" => "Quantity tier discounts",
+	"add_tier" => "Add tier",
+	"min_qty" => "Min qty",
+	"max_qty" => "Max qty",
+	"environment_variables_updated_successfully" => "Environment variables updated successfully",
+	"Dto_(%)" => "Dto (%)",
+	"PVP" => "PVP",
+	"Standered" => "Standered",
 ];
