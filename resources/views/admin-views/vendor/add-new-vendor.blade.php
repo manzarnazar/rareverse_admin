@@ -380,18 +380,6 @@
                                     <input class="form-control" type="text" name="tax_identification_number"
                                         placeholder="{{ translate('type_your_TIN_number') }}">
                                 </div>
-                                <div class="form-group mb-0">
-                                    <label class="form-label mb-2" for="">
-                                        {{ translate('Expire_Date') }}
-                                    </label>
-                                    <div class="position-relative">
-                                        <span class="fi fi-sr-calendar icon-absolute-on-right"></span>
-                                        <input type="text"
-                                            class="js-daterangepicker_single-date-with-placeholder-add-new-vendor form-control bg-white"
-                                            placeholder="{{ translate('click_to_add_date') }}" name="tin_expire_date"
-                                            value="" readonly>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <div class="col-lg-4">

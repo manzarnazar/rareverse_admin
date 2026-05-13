@@ -284,7 +284,6 @@ class SellerController extends Controller
             'bottom_banner' => $bottom_banner,
             'offer_banner' => $offer_banner,
             'tax_identification_number' => $request['tax_identification_number'],
-            'tin_expire_date' => $request['tin_expire_date'],
             'updated_at' => now()
         ]);
 

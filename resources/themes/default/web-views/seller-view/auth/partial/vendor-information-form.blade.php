@@ -149,18 +149,6 @@
                                                 name="tax_identification_number"
                                                 placeholder="{{ translate('type_your_TIN_number') }}">
                                         </div>
-                                        <div class="form-group mb-4">
-                                            <label class="mb-2 text-capitalize" for="">
-                                                {{ translate('Expire_Date') }}
-                                            </label>
-                                            <div class="position-relative">
-                                                <span class="fi fi-sr-calendar icon-absolute-on-right"></span>
-                                                <input type="text"
-                                                    class="js-daterangepicker_single-date-with-placeholder form-control"
-                                                    placeholder="{{ translate('click_to_add_date') }}"
-                                                    name="tin_expire_date" value="" readonly>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">

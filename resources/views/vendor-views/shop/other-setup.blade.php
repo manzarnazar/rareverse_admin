@@ -116,18 +116,6 @@ $freeDeliveryResponsibility = getWebConfig(name: 'free_delivery_responsibility')
                                     value="{{ $shop?->tax_identification_number }}"
                                     placeholder="{{ translate('type_your_TIN_number') }}">
                             </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label text-dark">
-                                    {{ translate('Expire_Date') }}
-                                </label>
-                                <div class="position-relative">
-                                    <span class="fi fi-sr-calendar icon-absolute-on-right"></span>
-                                    <input type="text" name="tin_expire_date"
-                                        value="{{ $shop?->tin_expire_date ? \Carbon\Carbon::parse($shop->tin_expire_date)->format('m/d/Y') : '' }}"
-                                        class="js-daterangepicker_single-date-with-placeholder form-control"
-                                        placeholder="{{ translate('click_to_add_date') }}" readonly>
-                                </div>
-                            </div>
                         </div>
                     </div>
 

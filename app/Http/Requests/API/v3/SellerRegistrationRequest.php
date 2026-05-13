@@ -51,7 +51,6 @@ class SellerRegistrationRequest extends FormRequest
             ),
             'tin_certificate' => 'nullable|mimes:pdf,doc,docx,jpg|max:' . $maxFileSize,
             'tax_identification_number' => 'nullable|string',
-            'tin_expire_date' => 'nullable|date|after_or_equal:today',
 
         ];
     }
@@ -79,7 +78,6 @@ class SellerRegistrationRequest extends FormRequest
             'bottom_banner.mimes' => translate('The bottom banner must be a file of type: ') . getFileUploadFormats(skip: ['.svg'], asMessage: true),
             'bottom_banner.max' => translate('The bottom banner may not be greater than ') . getFileUploadMaxSize() . ' MB.',
 
-            'tin_expire_date.after_or_equal' => translate('TIN expiry date must be today or later.'),
             'tin_certificate.mimes' => translate('The tin certificate must be a file of type: ') . getFileUploadFormats(skip: ['.png', '.gif', '.svg'], asMessage: true) . getFileUploadFormats(type: 'file', skip: ['.txt'], asMessage: 'true'),
             'tin_certificate.max' => translate('The tin certificate may not be greater than ') . getFileUploadMaxSize() . ' MB.',
         ];

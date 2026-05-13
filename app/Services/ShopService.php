@@ -85,7 +85,6 @@ class ShopService
             'bottom_banner' => $this->upload(dir: 'shop/banner/', format: 'webp', image: $request->file('bottom_banner')),
             'bottom_banner_storage_type' => $request->has('banner') ? $storage : null,
             'tax_identification_number' => $request['tax_identification_number'],
-            'tin_expire_date' => $request['tin_expire_date'] ?? null,
             'tin_certificate' => $request->file('tin_certificate') ? $this->fileUpload(dir: 'shop/documents/', format: $request->file('tin_certificate')->getClientOriginalExtension(), file: $request->file('tin_certificate')) : null,
             'tin_certificate_storage_type' => $request->has('tin_certificate') ? $storage : null,
         ];

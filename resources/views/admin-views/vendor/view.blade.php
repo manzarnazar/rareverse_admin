@@ -288,7 +288,7 @@
                                     <span>:</span>
                                     <span class="value">{{ $seller['phone'] }}</span>
                                 </div>
-                                @if (empty($seller?->shop?->tax_identification_number) && empty($seller?->shop?->tin_expire_date))
+                                @if (empty($seller?->shop?->tax_identification_number) && empty($seller?->shop?->tin_certificate))
                                     <div class="bg-danger bg-opacity-10 fs-12 px-12 py-10 text-dark rounded d-flex gap-2 align-items-center mt-2">
                                         <i class="fi fi-sr-triangle-warning text-danger"></i>
                                         <span>{{translate('No_TIN_added')}}</span>
@@ -298,13 +298,6 @@
                                         <span class="key">{{ translate('tin_number') }}</span>
                                         <span>:</span>
                                         <span class="value">{{ $seller?->shop->tax_identification_number ?? '-' }}</span>
-                                    </div>
-                                    <div class="flex-nowrap overflow-wrap-anywhere">
-                                        <span class="key">{{ translate('expire_date') }}</span>
-                                        <span>:</span>
-                                        <span class="value">
-                                            {{ $seller?->shop?->tin_expire_date ? $seller->shop?->tin_expire_date->format('d/m/Y') : '-' }}
-                                        </span>
                                     </div>
                                 @endif
 

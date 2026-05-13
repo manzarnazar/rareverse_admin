@@ -5417,7 +5417,7 @@ return [
     "Request_Timeount" => "Request Timeount",
     "search_delivery_men" => "Search delivery men",
     "No_Deliveryman_Found" => "No Deliveryman Found",
-    "add_your_tin_number_upload_the_certificate_and_set_the_expiry_date_to_stay_tax_compliant" => "Add your RFC, upload your SAT fiscal certificate (Constancia), and set the expiry date to stay tax compliant",
+    "add_your_tin_number_upload_the_certificate_and_set_the_expiry_date_to_stay_tax_compliant" => "Add your RFC and upload your SAT fiscal certificate (Constancia) to stay tax compliant",
     "Business_Tin" => "RFC",
     "requested_withdrawal_amount" => "Requested withdrawal amount",
     "withdraw_setup" => "Withdraw setup",

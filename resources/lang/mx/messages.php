@@ -2444,7 +2444,7 @@ return [
 	"add_your_apple_app_store_link_to_redirect_users_when_the_app_is_not_installed_or_requires_update" => "agregue el enlace de su tienda de aplicaciones de Apple para redirigir a los usuarios cuando la aplicación no esté instalada o requiera actualización",
 	"add_your_google_play_store_link_to_redirect_users_when_the_app_is_not_installed_or_needs_update" => "agregue su enlace de Google Play Store para redirigir a los usuarios cuando la aplicación no esté instalada o necesite actualización",
 	"add_your_products_thumbnail_in" => "agregue la miniatura de sus productos en",
-	"add_your_tin_number_upload_the_certificate_and_set_the_expiry_date_to_stay_tax_compliant" => "Ingrese su RFC, cargue su Constancia de Situación Fiscal (SAT) y establezca la fecha de vigencia para cumplir con sus obligaciones fiscales",
+	"add_your_tin_number_upload_the_certificate_and_set_the_expiry_date_to_stay_tax_compliant" => "Ingrese su RFC y cargue su Constancia de Situación Fiscal (SAT) para cumplir con sus obligaciones fiscales",
 	"add_zip_file_option" => "agregar opción de archivo zip",
 	"added_to_cart_successfully!" => "añadido al carrito con éxito!",
 	"added_to_wishlist" => "añadido a la lista de deseos",

@@ -207,18 +207,15 @@
                                         </div>
                                     </div>
                                 </div>
-                                @if($shop?->tax_identification_number && $shop?->tin_expire_date)
+                                @if($shop?->tax_identification_number || $shop?->tin_certificate)
                                     <div class="col-sm-6 col-lg-4 col-xl-3">
                                         <div class="media gap-10">
                                             <img width="36" height="36"
                                                  src="{{ dynamicAsset(path: 'public/assets/back-end/img/svg/tin-icon.svg') }}" alt="">
                                             <div class="media-body">
                                                 <h5>
-                                                    {{ translate('TIN') }}: {{ $shop?->tax_identification_number }}
+                                                    {{ translate('TIN') }}: {{ $shop?->tax_identification_number ?: '—' }}
                                                 </h5>
-                                                <h6 class="opacity--80">
-                                                    {{ translate('Exp') }} : {{ $shop?->tin_expire_date->format('d M Y') }}
-                                                </h6>
                                             </div>
                                         </div>
                                     </div>

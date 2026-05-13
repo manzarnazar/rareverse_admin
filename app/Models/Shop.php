@@ -34,7 +34,6 @@ use Carbon\Carbon;
  * @property string|null $setup_guide
  * @property string|null $setup_guide_app
  * @property string|null $tax_identification_number
- * @property Carbon|null $tin_expire_date
  * @property string|null $tin_certificate
  * @property string|null $tin_certificate_storage_type
  *
@@ -73,7 +72,6 @@ class Shop extends Model
         'setup_guide',
         'setup_guide_app',
         'tax_identification_number',
-        'tin_expire_date',
         'tin_certificate',
         'tin_certificate_storage_type',
     ];
@@ -92,7 +90,6 @@ class Shop extends Model
         'temporary_close' => 'boolean',
         'setup_guide' => 'array',
         'setup_guide_app' => 'array',
-        'tin_expire_date' => 'date',
     ];
 
     public function seller(): BelongsTo

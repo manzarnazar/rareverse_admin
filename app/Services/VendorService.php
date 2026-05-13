@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Traits\FileManagerTrait;
-use Carbon\Carbon;
 
 class VendorService
 {
@@ -78,7 +77,6 @@ class VendorService
     {
         $data = [
             'tax_identification_number' => $request['tax_identification_number'],
-            'tin_expire_date' => $request['tin_expire_date'] ? Carbon::parse($request['tin_expire_date']) : null,
         ];
         if ($request->file('tin_certificate')) {
             $data['tin_certificate'] = $this->fileUpload(dir: 'shop/documents/', format: $request->file('tin_certificate')->getClientOriginalExtension(), file: $request->file('tin_certificate'));

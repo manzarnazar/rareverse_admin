@@ -10,7 +10,6 @@ use App\Models\Seller;
 use App\Models\Shop;
 use App\Utils\Helpers;
 use App\Utils\ImageManager;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +52,6 @@ class RegisterController extends Controller
             $shop->bottom_banner = ImageManager::upload('shop/banner/', 'webp', $request->file('bottom_banner'));
             $shop->bottom_banner_storage_type = $request->has('bottom_banner') ? $storage : null;
             $shop->tax_identification_number = $request['tax_identification_number'] ?? '';
-            $shop->tin_expire_date = $request['tin_expire_date'] ? Carbon::parse($request['tin_expire_date']) : null;
             $shop->tin_certificate = $request->file('tin_certificate') ? ImageManager::file_upload(
                 dir: 'shop/documents/',
                 format: $request->file('tin_certificate')->getClientOriginalExtension(),
